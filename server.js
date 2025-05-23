@@ -178,31 +178,27 @@ app.post('/api/payment', authenticateToken, (req, res) => {
     }
 
     // Simuler un succès ou un échec aléatoire pour un mock (vous pouvez le forcer à true pour les tests)
-    const success = Math.random() > 0.1; // 90% de chances de succès
+    // Toujours réussir le paiement
+    const orderDate = new Date().toISOString();
+    const qrCodeKey = uuidv4();
 
-    if (success) {
-        const orderDate = new Date().toISOString();
-        const qrCodeKey = uuidv4(); // Génère une clé unique pour le QR code
-
-        db.run(
-            `INSERT INTO orders (user_id, order_date, total_price, items, qr_code_key) VALUES (?, ?, ?, ?, ?)`,
-            [userId, orderDate, totalPrice, JSON.stringify(cartItems), qrCodeKey], // Stocke les items en JSON
-            function (err) {
-                if (err) {
-                    console.error("Error inserting order:", err.message);
-                    return res.status(500).json({ message: 'Erreur serveur lors de l\'enregistrement de la commande.', success: false });
-                }
-                res.status(200).json({
-                    message: 'Paiement simulé réussi ! Votre commande a été confirmée.',
-                    success: true,
-                    orderId: this.lastID, // ID de la commande insérée
-                    qrCodeKey: qrCodeKey // Renvoie la clé du QR code au frontend
-                });
-            }
-        );
-    } else {
-        res.status(400).json({ message: 'Paiement simulé échoué. Veuillez réessayer.', success: false });
+    db.run(
+    `INSERT INTO orders (user_id, order_date, total_price, items, qr_code_key) VALUES (?, ?, ?, ?, ?)`,
+    [userId, orderDate, totalPrice, JSON.stringify(cartItems), qrCodeKey],
+    function (err) {
+        if (err) {
+        console.error("Error inserting order:", err.message);
+        return res.status(500).json({ message: 'Erreur serveur lors de l\'enregistrement de la commande.', success: false });
+        }
+        res.status(200).json({
+        message: 'Paiement simulé réussi ! Votre commande a été confirmée.',
+        success: true,
+        orderId: this.lastID,
+        qrCodeKey: qrCodeKey
+        });
     }
+    );
+
 });
 
 // NOUVELLE ROUTE POUR RÉCUPÉRER LES COMMANDES DE L'UTILISATEUR
