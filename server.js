@@ -10,6 +10,8 @@ const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+// Il est CRUCIAL de changer cette clé pour une valeur UNIQUE et FORTE,
+// et de la stocker dans une variable d'environnement sur Render.
 const JWT_SECRET = 'your_jwt_secret_key'; // CHANGEZ CELA POUR UNE CLÉ SECRÈTE ROBUSTE EN PRODUCTION
 
 // Middleware
@@ -169,7 +171,8 @@ app.get('/api/offers', (req, res) => {
 });
 
 // ROUTE DE PAIEMENT SIMULÉ - MAINTENANT AVEC ENREGISTREMENT DE COMMANDE
-app.post('/api/payment', authenticateToken, (req, res) => {
+// ATTENTION: LA ROUTE A ÉTÉ CHANGÉE DE '/api/payment' À '/api/orders' POUR CORRESPONDRE AU FRONTEND
+app.post('/api/orders', authenticateToken, (req, res) => { // CHANGEMENT ICI : de '/api/payment' à '/api/orders'
     const { cartItems, totalPrice } = req.body; // Récupère les articles du panier et le total du frontend
     const userId = req.user.id; // L'ID de l'utilisateur connecté
 
@@ -177,8 +180,6 @@ app.post('/api/payment', authenticateToken, (req, res) => {
         return res.status(400).json({ message: "Panier vide ou données manquantes pour le paiement." });
     }
 
-    // Simuler un succès ou un échec aléatoire pour un mock (vous pouvez le forcer à true pour les tests)
-    // Toujours réussir le paiement
     const orderDate = new Date().toISOString();
     const qrCodeKey = uuidv4();
 
@@ -187,18 +188,19 @@ app.post('/api/payment', authenticateToken, (req, res) => {
     [userId, orderDate, totalPrice, JSON.stringify(cartItems), qrCodeKey],
     function (err) {
         if (err) {
-        console.error("Error inserting order:", err.message);
-        return res.status(500).json({ message: 'Erreur serveur lors de l\'enregistrement de la commande.', success: false });
+            console.error("Error inserting order:", err.message);
+            // Retourne un message d'erreur avec success: false si l'insertion échoue
+            return res.status(500).json({ message: 'Erreur serveur lors de l\'enregistrement de la commande.', success: false });
         }
+        // Retourne success: true si l'insertion est réussie
         res.status(200).json({
-        message: 'Paiement simulé réussi ! Votre commande a été confirmée.',
-        success: true,
-        orderId: this.lastID,
-        qrCodeKey: qrCodeKey
+            message: 'Paiement simulé réussi ! Votre commande a été confirmée.',
+            success: true,
+            orderId: this.lastID,
+            qrCodeKey: qrCodeKey
         });
     }
     );
-
 });
 
 // NOUVELLE ROUTE POUR RÉCUPÉRER LES COMMANDES DE L'UTILISATEUR
